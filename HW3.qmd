@@ -4,4 +4,150 @@ format: html
 editor: visual
 ---
 
-## 
+## Setting up environment
+
+```{r}
+load("hw2_list.rda")
+bp_list$treatment
+bp_list$placebo
+```
+
+## Task 1: Control flow practice
+
+Suppose we want to characterize the post-treatment (or placebo) blood pressure measurement as optimal (≤ 120), borderline (120 \< bp ≤ 130), and high (\> 130).
+
+```{r}
+#initialize status columns for both data frames 
+bp_list$treatment$status <- character(20) 
+bp_list$placebo$status <- character(10)
+
+#------------------------------------------------------------
+
+#creating the status column for the treatment dataframe 
+
+#access the treatment dataframe 
+treatment<- bp_list$treatment
+
+#for loop to iterate through each row
+for (i in 1:nrow(treatment)) {
+  bp <- treatment$post_bp[i] #get the post bp value for each i
+  
+  #apply conditions
+  if (bp >= 130) {
+    treatment$status[i] <- "high"
+  } else if (bp > 120) {
+    treatment$status[i] <- "borderline"
+  } else {
+    treatment$status[i] <- "optimal"
+  }
+}
+
+#updata treatment dataframe in the list
+bp_list$treatment <- treatment 
+
+#------------------------------------------------------------
+
+#creating the status column for the placebo dataframe 
+
+#access the placebo dataframe 
+placebo<- bp_list$placebo
+
+#for loop to iterate through each row
+for (i in 1:nrow(placebo)) {
+  bp <- placebo$post_bp[i] #get the post bp value for each i
+  
+  #apply conditions
+  if (bp >= 130) {
+    placebo$status[i] <- "high"
+  } else if (bp > 120) {
+    placebo$status[i] <- "borderline"
+  } else {
+    placebo$status[i] <- "optimal"
+  }
+}
+
+#updata placebo dataframe in the list
+bp_list$placebo <- placebo 
+
+bp_list$placebo
+bp_list$treatment
+```
+
+## Task 2: Function Writing Part A
+
+Suppose we want to write a function that can apply the above classification to many datasets.
+
+Function arguments:
+
+-   'df_list' is a list that contains two dataframes, treatment and placebo
+
+-   'stat' represents the summary function to be used, with the default being mean
+
+```{r}
+summarize_bp <- function(df_list, stat = "mean") {
+  #extract the actual function from the quoted string argument
+  my_fun <- get(stat)
+  
+  #calculate the statistics for the pre_bp, post_bp, and diff_bp columns in the treatment dataframe; apply the 'stat' function
+  tsum_pre_bp <- my_fun(df_list$treatment$pre_bp)
+  tsum_post_bp <- my_fun(df_list$treatment$post_bp)
+  tsum_diff_bp <- my_fun(df_list$treatment$diff_bp)
+  
+  #calculate the statistics for the columns in the placebo dataframe
+  psum_pre_bp <- my_fun(df_list$placebo$pre_bp)
+  psum_post_bp <- my_fun(df_list$placebo$post_bp)
+  psum_diff_bp <- my_fun(df_list$placebo$diff_bp)
+  
+  #create vector with the results from above (store results here)
+  stats_values <-
+    c(tsum_pre_bp,
+      tsum_post_bp,
+      tsum_diff_bp,
+      psum_pre_bp,
+      psum_post_bp,
+      psum_diff_bp)
+  
+  #assign meaningfull names to the vector elements
+  
+  stat_names <- c(
+    paste0(stat, "_treatment_pre_bp"),
+    paste0(stat, "_treatment_post_bp"),
+    paste0(stat, "_treatment_diff_bp"),
+    paste0(stat, "_placebo_pre_bp"),
+    paste0(stat, "_placebo_post_bp"),
+    paste0(stat, "_placebo_diff_bp")
+  )
+  
+  names(stats_values) <- stat_names
+  
+  #return this named vector as function outpot
+  return(stats_values)
+}
+
+```
+
+## Task 2: Function Writing Part B
+
+Here I will be applying the written function to my list of treatment and placebo dataframes.
+
+```{r}
+#Apply function to my list of data without specifying my statistic
+result_mean <- summarize_bp(bp_list)
+print(result_mean)
+
+#Apply function with specifying statistic as variance
+result_var <- summarize_bp(bp_list, stat="var")
+print(result_var)
+
+#Apply function with specifying statistic as standard deviation
+result_std<- summarize_bp(bp_list, stat="sd")
+print(result_std)
+
+#Apply function with specifying statistic as min 
+result_min<- summarize_bp(bp_list, stat="min")
+print(result_min)
+
+#Apply function with specifying statistic as max
+result_max<- summarize_bp(bp_list, stat="max")
+print(result_max)
+```
